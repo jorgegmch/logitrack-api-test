@@ -18,13 +18,13 @@ public interface AuditoriaRepository extends JpaRepository<Auditoria, Long> {
     @Query("SELECT a FROM Auditoria a "
             + "WHERE (:productoId IS NULL OR "
             + "       (a.entidadAfectada = 'Producto' AND "
-            + "        (a.valoresNuevos LIKE CONCAT('%\"idProducto\":', :productoId, ',%') "
-            + "         OR a.valoresAnteriores LIKE CONCAT('%\"idProducto\":', :productoId, ',%')))) "
-            + "AND (:fechaInicio IS NULL OR a.fechaHora >= :fechaInicio) "
-            + "AND (:fechaFin IS NULL OR a.fechaHora <= :fechaFin) "
+            + "        (a.valoresNuevos LIKE CONCAT('%\"idProducto\":', CAST(:productoId AS string), ',%') "
+            + "         OR a.valoresAnteriores LIKE CONCAT('%\"idProducto\":', CAST(:productoId AS string), ',%')))) "
+            + "AND (CAST(:fechaInicio AS timestamp) IS NULL OR a.fechaHora >= :fechaInicio) "
+            + "AND (CAST(:fechaFin AS timestamp) IS NULL OR a.fechaHora <= :fechaFin) "
             + "AND (:campoModificado IS NULL OR "
-            + "     a.valoresNuevos LIKE CONCAT('%\"', :campoModificado, '\":%') "
-            + "     OR a.valoresAnteriores LIKE CONCAT('%\"', :campoModificado, '\":%')) "
+            + "     a.valoresNuevos LIKE CONCAT('%\"', CAST(:campoModificado AS string), '\":%') "
+            + "     OR a.valoresAnteriores LIKE CONCAT('%\"', CAST(:campoModificado AS string), '\":%')) "
             + "ORDER BY a.fechaHora DESC")
     List<Auditoria> buscarConFiltros(
             @Param("productoId") Long productoId,
