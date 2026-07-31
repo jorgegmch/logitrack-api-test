@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/auditorias/**").hasRole("ADMIN")
 
                         .requestMatchers("/bodegas/**", "/productos/**", "/movimientos/**",
-                                "/inventario/**", "/reportes/**").authenticated()
+        "/inventario/**", "/auditorias/**", "/reportes/**", "/api/reportes/**").authenticated()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
