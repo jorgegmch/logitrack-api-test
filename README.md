@@ -406,40 +406,6 @@ Se amplio el modulo de reportes con un nuevo controlador y servicio (`test_c4/Re
 - `campoModificado` (nombre del campo, busqueda dentro del snapshot JSON de la auditoria)
 Todos los filtros pueden usarse solos o en cualquier combinacion entre si, resuelto mediante consultas JPQL con el patron `:param IS NULL OR campo = :param` en `MovimientoRepository.buscarConFiltros()` y `AuditoriaRepository.buscarConFiltros()`.
  
-### Evidencias de pruebas en Insomnia
- 
-**1. Movimientos filtrados por tipo y rango de fechas**
- 
-![Movimientos por tipo y fecha](docs/capturas/postman-01-movimientos-tipo-fecha.png)
- 
-**2. Movimientos filtrados por bodega**
- 
-![Movimientos por bodega](docs/capturas/postman-02-movimientos-bodega.png)
- 
-**3. Movimientos con multiples filtros combinados**
- 
-![Movimientos combinados](docs/capturas/postman-03-movimientos-combinados.png)
- 
-**4. Movimientos sin filtros (consulta completa)**
- 
-![Movimientos sin filtros](docs/capturas/postman-04-movimientos-sin-filtros.png)
- 
-**5. Auditorias filtradas por producto**
- 
-![Auditorias por producto](docs/capturas/postman-05-auditoria-producto.png)
- 
-**6. Auditorias filtradas por rango de fechas**
- 
-![Auditorias por fecha](docs/capturas/postman-06-auditoria-fechas.png)
- 
-**7. Auditorias filtradas por campo modificado**
- 
-![Auditorias por campo](docs/capturas/postman-07-auditoria-campo.png)
- 
-**8. Auditorias con multiples filtros combinados**
- 
-![Auditorias combinadas](docs/capturas/postman-08-auditoria-combinada.png)
- 
 ## Documento explicativo
  
 El documento con el diagrama de clases, la descripción de arquitectura y el ejemplo de uso del token JWT se encuentra en [`docs/documento-explicativo.pdf`](docs/documento-explicativo.pdf).
