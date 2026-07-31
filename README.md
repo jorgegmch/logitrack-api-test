@@ -1,11 +1,11 @@
 # LogiTrack API
-
+ 
 Sistema de gestión y auditoría de bodegas desarrollado con **Spring Boot**. Permite controlar movimientos de inventario entre bodegas (entradas, salidas y transferencias), registrar automáticamente los cambios realizados por cada usuario mediante un sistema de auditoría, y proteger la información con autenticación **JWT** y control de acceso basado en roles.
-
+ 
 ---
-
+ 
 ## Tabla de contenido
-
+ 
 - [Descripción del proyecto](#descripción-del-proyecto)
 - [Tecnologías](#tecnologías)
 - [Arquitectura y estructura del proyecto](#arquitectura-y-estructura-del-proyecto)
@@ -17,23 +17,21 @@ Sistema de gestión y auditoría de bodegas desarrollado con **Spring Boot**. Pe
 - [Manejo de errores](#manejo-de-errores)
 - [Frontend](#frontend)
 - [Scripts SQL](#scripts-sql)
-- [Testt realizados](#test-realizados)
+- [Pruebas realizadas](#pruebas-realizadas)
 - [Autor](#autor)
-
 ---
-
+ 
 ## Descripción del proyecto
-
+ 
 LogiTrack S.A. administra varias bodegas distribuidas en distintas ciudades, encargadas de almacenar productos y gestionar movimientos de inventario. Este sistema centraliza esa operación, permitiendo:
-
+ 
 - Controlar todos los movimientos entre bodegas (ENTRADA, SALIDA, TRANSFERENCIA).
 - Registrar automáticamente cada cambio (INSERT, UPDATE, DELETE) realizado sobre las entidades principales, incluyendo quién lo hizo y qué valores cambiaron.
 - Proteger todos los endpoints con autenticación JWT y control de acceso por rol (`ADMIN` / `EMPLEADO`).
 - Ofrecer una API REST completamente documentada con Swagger/OpenAPI 3.
 - Consumir la API completa desde un frontend propio en HTML/CSS/JS vanilla, con modo oscuro y claro.
-
 ## Tecnologías
-
+ 
 | Componente | Tecnología |
 |---|---|
 | Lenguaje | Java 17 |
@@ -45,20 +43,19 @@ LogiTrack S.A. administra varias bodegas distribuidas en distintas ciudades, enc
 | Persistencia | Spring Data JPA / Hibernate |
 | Frontend | HTML, CSS y JavaScript vanilla (sin frameworks) |
 | Servidor | Tomcat embebido |
-
-> **Nota sobre el despliegue:** la aplicación se ejecuta con el servidor **Tomcat embebido** que trae Spring Boot por defecto (`./mvnw spring-boot:run`).
-
+ 
+> **Nota:** el enunciado original sugería MySQL como motor de base de datos; con autorización del profesor, el proyecto utiliza **PostgreSQL** en su totalidad.
+ 
+> **Nota sobre el despliegue:** la aplicación se ejecuta con el servidor **Tomcat embebido** que trae Spring Boot por defecto (`./mvnw spring-boot:run`), cumpliendo el requisito de despliegue sin necesidad de un Tomcat externo.
+ 
 ## Arquitectura y estructura del proyecto
-
+ 
 ```
 logitrack-api/
 ├── .vscode/
 ├── database/
 │   ├── data.sql
 │   └── schema.sql
-├── docs/
-│   ├── capturas/
-│   └── documento-explicativo.pdf
 ├── src/
 │   ├── main/
 │   │   ├── java/com/jorgegmch/logitrack/
@@ -89,90 +86,86 @@ logitrack-api/
 ├── pom.xml
 └── README.md
 ```
-
+ 
 ### Entidades principales
-
+ 
 `Usuario`, `Bodega`, `Producto`, `InventarioBodega`, `Movimiento`, `DetalleMovimiento`, `Auditoria`, más los enums `Rol`, `TipoMovimiento` y `TipoOperacion`.
-
+ 
 El **stock no es un atributo de `Producto`**: vive en `InventarioBodega`, ya que un mismo producto puede tener cantidades distintas según la bodega en la que se encuentre. El stock se gestiona exclusivamente a través del registro de movimientos.
-
+ 
 ## Instalación y ejecución
-
+ 
 ### Requisitos previos
-
+ 
 - JDK 17
 - Maven (o usar el wrapper `mvnw` incluido)
 - Una base de datos PostgreSQL accesible (el proyecto fue desarrollado usando Supabase)
-
 ### 1. Clonar el repositorio
-
+ 
 ```bash
 git clone https://github.com/jorgegmch/logitrack-api.git
 cd logitrack-api
 ```
-
+ 
 ### 2. Configurar `application.properties`
-
+ 
 El archivo `src/main/resources/application.properties` **no está versionado** (contiene credenciales sensibles). Se incluye `application.properties.example` como referencia. Crea tu propio `application.properties` con el siguiente contenido, reemplazando los valores según tu entorno:
-
+ 
 ```properties
 spring.application.name=logitrack
-
+ 
 # Base de datos
 spring.datasource.url=jdbc:postgresql://<host>:6543/<basededatos>?prepareThreshold=0
 spring.datasource.username=<usuario>
 spring.datasource.password=<password>
 spring.datasource.driver-class-name=org.postgresql.Driver
-
+ 
 # Hibernate / JPA
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.properties.hibernate.default_schema=db_logitrack
-
+ 
 # JWT
 jwt.secret=<clave-secreta-base64>
-jwt.expiration=86400000
+jwt.expiration=2592000000
 ```
-
+ 
 > `ddl-auto=validate` se usa intencionalmente: el esquema se crea manualmente mediante `schema.sql`, evitando modificaciones automáticas y accidentales sobre una base de datos compartida.
-
+ 
 ### 3. Ejecutar los scripts SQL
-
+ 
 Ejecuta, en orden, los scripts ubicados en `database/`:
-
+ 
 1. `schema.sql` — crea el esquema `db_logitrack` y todas las tablas.
 2. `data.sql` — carga datos iniciales, incluyendo dos usuarios de prueba.
-
 **Usuarios precargados:**
-
+ 
 | Username | Password | Rol |
 |---|---|---|
 | `admin` | `Admin123!` | ADMIN |
 | `empleado` | `Empleado123!` | EMPLEADO |
-
+ 
 ### 4. Ejecutar la aplicación
-
+ 
 ```bash
 ./mvnw spring-boot:run
 ```
-
+ 
 La aplicación queda disponible en `http://localhost:8080`.
-
+ 
 ### 5. Acceder al sistema
-
+ 
 - **Frontend:** `http://localhost:8080/` (redirige automáticamente al login)
 - **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
-
 ## Autenticación y roles
-
+ 
 La autenticación es **stateless**, basada en tokens JWT firmados con HMAC-SHA. El flujo es:
-
+ 
 1. `POST /auth/login` con `username` y `password` → devuelve un token JWT junto con `idUsuario`, `username` y `rol`.
 2. El token se envía en cada petición protegida mediante el header `Authorization: Bearer <token>`.
-3. Al expirar el token (24 horas desde su generación), el usuario debe volver a autenticarse.
-
+3. Al expirar el token (30 días desde su generación), el usuario debe volver a autenticarse.
 ### Roles del sistema
-
+ 
 | Acción | ADMIN | EMPLEADO |
 |---|---|---|
 | Ver productos, bodegas, inventario, movimientos, reportes | ✅ | ✅ |
@@ -183,13 +176,13 @@ La autenticación es **stateless**, basada en tokens JWT firmados con HMAC-SHA. 
 | Ver / gestionar usuarios | ✅ | ❌ |
 | Registrar nuevos usuarios | ✅ | ❌ |
 | Ver auditorías | ✅ | ❌ |
-
+ 
 Al registrar un movimiento, el **usuario responsable siempre es quien está autenticado** — el backend lo resuelve internamente a partir del token, sin que pueda ser elegido ni sobrescrito desde el cliente. Esto protege la confiabilidad de la trazabilidad del sistema.
-
+ 
 ### Estructura del token JWT
-
+ 
 Un JWT se compone de tres partes separadas por puntos: `header.payload.firma`. El **payload** (parte codificada dentro del token, no confundir con la respuesta JSON de `/auth/login`) contiene los siguientes *claims*, definidos en `JwtService.generarToken()`:
-
+ 
 ```json
 {
   "sub": "admin",
@@ -198,37 +191,38 @@ Un JWT se compone de tres partes separadas por puntos: `header.payload.firma`. E
   "exp": 1755886400
 }
 ```
-
+ 
 - `sub`: username del usuario autenticado.
 - `rol`: rol del usuario (`ADMIN` / `EMPLEADO`), usado por `JwtAuthenticationFilter` para construir las autoridades de Spring Security.
 - `iat` / `exp`: fecha de emisión y expiración (timestamp Unix).
-
+> ⚠️ **Nota de seguridad:** un token JWT válido es una credencial de acceso completa durante su tiempo de vida. Por esta razón, este documento **no incluye un token real capturado del sistema** — solo la estructura de sus claims. Nunca publiques un token JWT real en un repositorio, documentación, o cualquier lugar accesible públicamente: cualquier persona con el token puede autenticarse con él hasta que expire, sin necesitar la contraseña original.
+ 
 ## Documentación de la API (Swagger)
-
+ 
 Toda la API está documentada con Springdoc OpenAPI 3. Una vez la aplicación está corriendo:
-
+ 
 ```
 http://localhost:8080/swagger-ui/index.html
 ```
-
+ 
 Para probar endpoints protegidos: hacer login vía `POST /auth/login`, copiar el token de la respuesta, y usar el botón **Authorize** en la parte superior de Swagger, pegando `Bearer <token>`.
-
+ 
 ## Ejemplos de endpoints
-
+ 
 ### Autenticación
-
+ 
 ```http
 POST /auth/login
 Content-Type: application/json
-
+ 
 {
   "username": "admin",
   "password": "Admin123!"
 }
 ```
-
+ 
 Respuesta:
-
+ 
 ```json
 {
   "idUsuario": 1,
@@ -237,48 +231,43 @@ Respuesta:
   "rol": "ADMIN"
 }
 ```
-
+ 
 ### Registrar un movimiento (ENTRADA)
-
+ 
 ```http
 POST /movimientos
 Authorization: Bearer <token>
 Content-Type: application/json
-
+ 
 {
   "tipo": "ENTRADA",
-  "bodegaOrigenId": 1,
-  "bodegaDestinoId": 2,
-  "productoIds": [
-    3
-  ],
-  "cantidades": [
-    10
-  ]
+  "bodegaDestinoId": 1,
+  "productoIds": [1, 2],
+  "cantidades": [10, 5]
 }
 ```
-
+ 
 ### Consultar productos con stock bajo
-
+ 
 ```http
 GET /inventario/stock-bajo?limite=10
 Authorization: Bearer <token>
 ```
-
+ 
 ### Consultar movimientos por rango de fechas
-
+ 
 ```http
 GET /movimientos/rango?desde=2026-07-01T00:00:00&hasta=2026-07-31T23:59:59
 Authorization: Bearer <token>
 ```
-
+ 
 ### Reporte de resumen general
-
+ 
 ```http
 GET /reportes/resumen
 Authorization: Bearer <token>
 ```
-
+ 
 ```json
 {
   "stockTotalPorBodega": [
@@ -289,25 +278,24 @@ Authorization: Bearer <token>
   ]
 }
 ```
-
+ 
 ## Sistema de auditoría automática
-
+ 
 Cada operación de creación, actualización o eliminación sobre `Producto`, `Bodega`, `Usuario` y `Movimiento` se registra automáticamente en la tabla `auditoria`, capturando:
-
+ 
 - Tipo de operación (`INSERT`, `UPDATE`, `DELETE`)
 - Fecha y hora
 - Usuario que realizó la acción
 - Entidad afectada
 - Valores anteriores y nuevos (snapshot en JSON)
-
 La implementación usa `@EntityListeners` de JPA (`AuditoriaListener`), combinado con `TransactionSynchronization.afterCommit()` y `@Transactional(propagation = Propagation.REQUIRES_NEW)`, garantizando que el registro de auditoría se guarde en una transacción independiente y confiable, después de que la operación original haya comprometido sus cambios exitosamente.
-
+ 
 Consultable vía `GET /auditorias`, `GET /auditorias/usuario/{id}` y `GET /auditorias/tipo/{tipoOperacion}` (acceso exclusivo `ADMIN`).
-
+ 
 ## Manejo de errores
-
+ 
 Centralizado mediante `@RestControllerAdvice` (`GlobalExceptionHandler`), devolviendo siempre una respuesta JSON consistente:
-
+ 
 ```json
 {
   "timestamp": "2026-07-23T13:15:34.409648",
@@ -317,7 +305,7 @@ Centralizado mediante `@RestControllerAdvice` (`GlobalExceptionHandler`), devolv
   "path": "/productos/9999"
 }
 ```
-
+ 
 | Excepción | Código HTTP |
 |---|---|
 | `RecursoNoEncontradoException` | 404 |
@@ -326,13 +314,13 @@ Centralizado mediante `@RestControllerAdvice` (`GlobalExceptionHandler`), devolv
 | `BadCredentialsException` | 401 |
 | `AccessDeniedException` | 403 |
 | `Exception` (no controlada) | 500 |
-
+ 
 ## Frontend
-
+ 
 Frontend propio en HTML, CSS y JavaScript vanilla (sin frameworks ni librerías de build), ubicado en `src/main/resources/static/`, servido directamente por Spring Boot.
-
+ 
 **Páginas:**
-
+ 
 - `login.html` — autenticación
 - `dashboard.html` — resumen general con estadísticas y gráficos (Chart.js vía CDN)
 - `productos.html` — CRUD de productos
@@ -342,20 +330,65 @@ Frontend propio en HTML, CSS y JavaScript vanilla (sin frameworks ni librerías 
 - `usuarios.html` — gestión de usuarios (exclusivo ADMIN)
 - `auditorias.html` — consulta de auditoría con filtros (exclusivo ADMIN)
 - `reportes.html` — vista detallada del reporte de resumen general
-
 **Características:**
-
+ 
 - Modo oscuro (por defecto) y modo claro, alternables con un botón, con preferencia guardada por navegador.
 - Interfaz completamente funcional contra la API real: cada operación disponible en el backend (crear, listar, actualizar, eliminar, filtrar) tiene su contraparte en el frontend, salvo aquellas restringidas por rol.
 - Manejo de sesión vía `localStorage`, con redirección automática al login si el token expira o no existe.
-
 ## Scripts SQL
-
+ 
 Ubicados en `database/`:
-
+ 
 - **`schema.sql`** — crea el schema `db_logitrack` y las 7 tablas del sistema, con sus llaves foráneas, restricciones `CHECK` e índices.
 - **`data.sql`** — datos iniciales: usuarios, bodegas, productos, inventario y un movimiento de ejemplo.
-
+## Pruebas realizadas
+ 
+Durante el desarrollo se verificaron manualmente, en Swagger y en el frontend, los siguientes escenarios:
+ 
+- **Autenticación:** login exitoso, login con credenciales inválidas (401), registro de usuario como ADMIN (201) y como EMPLEADO (403).
+- **CRUD y validaciones:** creación, actualización y eliminación de productos y bodegas; validación de campos obligatorios (400); consulta de un recurso inexistente (404).
+- **Roles y permisos:** intento de eliminar un producto, crear una bodega y listar usuarios con el rol EMPLEADO, confirmando el rechazo (403) en cada caso; las mismas acciones exitosas con el rol ADMIN.
+- **Consultas avanzadas:** productos con stock bajo, movimientos por rango de fechas, auditorías filtradas por usuario y por tipo de operación, reporte de resumen general.
+- **Auditoría automática:** verificación de que cada operación INSERT/UPDATE/DELETE sobre Producto, Bodega, Usuario y Movimiento genera su registro correspondiente en `/auditorias`, con el usuario responsable y los valores anteriores/nuevos correctos.
+- **Frontend:** flujo completo de login, navegación por las 9 vistas, operaciones CRUD desde la interfaz, alternancia de tema oscuro/claro, y verificación de que los controles restringidos por rol (botones de eliminar, módulo de usuarios, módulo de auditorías) se ocultan correctamente según el usuario autenticado.
+### Evidencia visual (muestra representativa)
+ 
+Las siguientes capturas son una muestra representativa de las pruebas descritas arriba, no un registro exhaustivo de cada escenario individual. Cada imagen fue elegida por cubrir varios aspectos a la vez (por ejemplo, la captura 3 demuestra manejo de errores *y* control de roles en una sola prueba).
+ 
+**1. Swagger UI — documentación de la API**
+ 
+![Swagger UI](docs/capturas/01-swagger-ui.png)
+ 
+**2. Autenticación — login exitoso**
+ 
+![Login exitoso](docs/capturas/02-login-exitoso.png)
+![Login exitoso](docs/capturas/02-2-login-exitoso.png)
+ 
+**3. Manejo de errores y roles — acción restringida para empleado (403)**
+ 
+![Error 403](docs/capturas/03-error-403.png)
+ 
+**4. CRUD funcionando — ejemplo con productos**
+ 
+![CRUD productos](docs/capturas/04-crud-productos.png)
+ 
+**5. Consultas avanzadas — reporte de resumen general**
+ 
+![Reporte de resumen](docs/capturas/05-reporte-resumen.png)
+ 
+**6. Auditoría automática — registro generado**
+ 
+![Auditoría](docs/capturas/06-auditoria.png)
+ 
+**7. Frontend — Vista ADMIN**
+ 
+![Login Frontend](docs/capturas/07-login-frontend.png)
+ 
+**8. Frontend — vista ADMIN vs EMPLEADO**
+ 
+![Vista ADMIN](docs/capturas/08-vista-admin.png)
+![Vista EMPLEADO](docs/capturas/08-2-vista-empleado.png)
+ 
 ## Ampliacion: Reportes Avanzados (test_c4)
  
 Se amplio el modulo de reportes con un nuevo controlador y servicio (`test_c4/ReporteAvanzadoController`, `test_c4/ReporteAvanzadoService`), que permite consultar movimientos y auditorias con filtros combinables entre si.
@@ -372,58 +405,45 @@ Se amplio el modulo de reportes con un nuevo controlador y servicio (`test_c4/Re
 - `fechaInicio` / `fechaFin` (rango de fechas)
 - `campoModificado` (nombre del campo, busqueda dentro del snapshot JSON de la auditoria)
 Todos los filtros pueden usarse solos o en cualquier combinacion entre si, resuelto mediante consultas JPQL con el patron `:param IS NULL OR campo = :param` en `MovimientoRepository.buscarConFiltros()` y `AuditoriaRepository.buscarConFiltros()`.
-
-## Test realizados
-
-Durante el desarrollo se verificaron manualmente, en Swagger y en el frontend, los siguientes escenarios:
-
-- **Autenticación:** login exitoso, login con credenciales inválidas (401), registro de usuario como ADMIN (201) y como EMPLEADO (403).
-- **CRUD y validaciones:** creación, actualización y eliminación de productos y bodegas; validación de campos obligatorios (400); consulta de un recurso inexistente (404).
-- **Roles y permisos:** intento de eliminar un producto, crear una bodega y listar usuarios con el rol EMPLEADO, confirmando el rechazo (403) en cada caso; las mismas acciones exitosas con el rol ADMIN.
-- **Consultas avanzadas:** productos con stock bajo, movimientos por rango de fechas, auditorías filtradas por usuario y por tipo de operación, reporte de resumen general.
-- **Auditoría automática:** verificación de que cada operación INSERT/UPDATE/DELETE sobre Producto, Bodega, Usuario y Movimiento genera su registro correspondiente en `/auditorias`, con el usuario responsable y los valores anteriores/nuevos correctos.
-- **Frontend:** flujo completo de login, navegación por las 9 vistas, operaciones CRUD desde la interfaz, alternancia de tema oscuro/claro, y verificación de que los controles restringidos por rol (botones de eliminar, módulo de usuarios, módulo de auditorías) se ocultan correctamente según el usuario autenticado.
-
-### Muestra representativa de los test
-
-**1. Swagger UI — documentación de la API**
-
-![Swagger UI](docs/capturas/01-swagger-ui.png)
-
-**2. Autenticación — login exitoso**
-
-![Login exitoso](docs/capturas/02-login-exitoso.png)
-![Login exitoso](docs/capturas/02-2-login-exitoso.png)
-
-**3. Manejo de errores y roles — acción restringida para empleado (403)**
-
-![Error 403](docs/capturas/03-error-403.png)
-
-**4. CRUD funcionando — ejemplo con productos**
-
-![CRUD productos](docs/capturas/04-crud-productos.png)
-
-**5. Consultas avanzadas — reporte de resumen general**
-
-![Reporte de resumen](docs/capturas/05-reporte-resumen.png)
-
-**6. Auditoría automática — registro generado**
-
-![Auditoría](docs/capturas/06-auditoria.png)
-
-**7. Frontend — Vista ADMIN**
-
-![Login Frontend](docs/capturas/07-login-frontend.png)
-
-**8. Frontend — vista ADMIN vs EMPLEADO**
-
-![Vista ADMIN](docs/capturas/08-vista-admin.png)
-![Vista EMPLEADO](docs/capturas/08-2-vista-empleado.png)
-
+ 
+### Evidencias de pruebas en Insomnia
+ 
+**1. Movimientos filtrados por tipo y rango de fechas**
+ 
+![Movimientos por tipo y fecha](docs/capturas/postman-01-movimientos-tipo-fecha.png)
+ 
+**2. Movimientos filtrados por bodega**
+ 
+![Movimientos por bodega](docs/capturas/postman-02-movimientos-bodega.png)
+ 
+**3. Movimientos con multiples filtros combinados**
+ 
+![Movimientos combinados](docs/capturas/postman-03-movimientos-combinados.png)
+ 
+**4. Movimientos sin filtros (consulta completa)**
+ 
+![Movimientos sin filtros](docs/capturas/postman-04-movimientos-sin-filtros.png)
+ 
+**5. Auditorias filtradas por producto**
+ 
+![Auditorias por producto](docs/capturas/postman-05-auditoria-producto.png)
+ 
+**6. Auditorias filtradas por rango de fechas**
+ 
+![Auditorias por fecha](docs/capturas/postman-06-auditoria-fechas.png)
+ 
+**7. Auditorias filtradas por campo modificado**
+ 
+![Auditorias por campo](docs/capturas/postman-07-auditoria-campo.png)
+ 
+**8. Auditorias con multiples filtros combinados**
+ 
+![Auditorias combinadas](docs/capturas/postman-08-auditoria-combinada.png)
+ 
 ## Documento explicativo
-
+ 
 El documento con el diagrama de clases, la descripción de arquitectura y el ejemplo de uso del token JWT se encuentra en [`docs/documento-explicativo.pdf`](docs/documento-explicativo.pdf).
-
+ 
 ## Módulo de reportes avanzados (ampliación)
  
 Se amplió el sistema con un módulo de reportes consolidados de movimientos y auditorías, con filtros combinables entre sí.
@@ -474,7 +494,7 @@ Ubicación en el código: paquete `com.jorgegmch.logitrack.test_c4` (`ReporteAva
 **8. Auditoría — filtros combinados (producto + campo modificado)**
  
 ![Auditoría combinada](docs/capturas/pruebas-thunder-client/thunder-08-auditoria-combinada.png)
-
+ 
 ## Autor
-
+ 
 **Jorge Gómez** — [github.com/jorgegmch](https://github.com/jorgegmch)
