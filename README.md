@@ -68,6 +68,7 @@ logitrack-api/
 │   │   │   ├── repository/      Repositorios Spring Data JPA
 │   │   │   ├── security/        JwtService, JwtAuthenticationFilter
 │   │   │   ├── service/         Lógica de negocio
+│   │   │   ├── test_c4/         Ampliación: reportes avanzados con filtros combinables
 │   │   │   └── LogitrackApplication.java
 │   │   └── resources/
 │   │       ├── static/                          Frontend (servido directamente por Spring Boot)
