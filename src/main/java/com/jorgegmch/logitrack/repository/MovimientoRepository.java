@@ -18,8 +18,8 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
             + "WHERE (:bodegaId IS NULL OR m.bodegaOrigenId.idBodega = :bodegaId OR m.bodegaDestinoId.idBodega = :bodegaId) "
             + "AND (:productoId IS NULL OR d.productoId.idProducto = :productoId) "
             + "AND (:tipoMovimiento IS NULL OR m.tipo = :tipoMovimiento) "
-            + "AND (:fechaInicio IS NULL OR m.fecha >= :fechaInicio) "
-            + "AND (:fechaFin IS NULL OR m.fecha <= :fechaFin) "
+            + "AND (CAST(:fechaInicio AS timestamp) IS NULL OR m.fecha >= :fechaInicio) "
+            + "AND (CAST(:fechaFin AS timestamp) IS NULL OR m.fecha <= :fechaFin) "
             + "ORDER BY m.fecha DESC")
     List<Movimiento> buscarConFiltros(
             @Param("bodegaId") Long bodegaId,

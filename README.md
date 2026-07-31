@@ -356,6 +356,23 @@ Ubicados en `database/`:
 - **`schema.sql`** — crea el schema `db_logitrack` y las 7 tablas del sistema, con sus llaves foráneas, restricciones `CHECK` e índices.
 - **`data.sql`** — datos iniciales: usuarios, bodegas, productos, inventario y un movimiento de ejemplo.
 
+## Ampliacion: Reportes Avanzados (test_c4)
+ 
+Se amplio el modulo de reportes con un nuevo controlador y servicio (`test_c4/ReporteAvanzadoController`, `test_c4/ReporteAvanzadoService`), que permite consultar movimientos y auditorias con filtros combinables entre si.
+ 
+### Nuevos endpoints
+ 
+**`GET /api/reportes/movimientos`** — filtros opcionales y combinables:
+- `bodega` (id de bodega origen o destino)
+- `producto` (id de producto)
+- `tipoMovimiento` (`ENTRADA`, `SALIDA`, `TRANSFERENCIA`)
+- `fechaInicio` / `fechaFin` (rango de fechas)
+**`GET /api/reportes/auditoria`** — filtros opcionales y combinables:
+- `producto` (id de producto afectado)
+- `fechaInicio` / `fechaFin` (rango de fechas)
+- `campoModificado` (nombre del campo, busqueda dentro del snapshot JSON de la auditoria)
+Todos los filtros pueden usarse solos o en cualquier combinacion entre si, resuelto mediante consultas JPQL con el patron `:param IS NULL OR campo = :param` en `MovimientoRepository.buscarConFiltros()` y `AuditoriaRepository.buscarConFiltros()`.
+
 ## Test realizados
 
 Durante el desarrollo se verificaron manualmente, en Swagger y en el frontend, los siguientes escenarios:
@@ -406,6 +423,57 @@ Durante el desarrollo se verificaron manualmente, en Swagger y en el frontend, l
 ## Documento explicativo
 
 El documento con el diagrama de clases, la descripción de arquitectura y el ejemplo de uso del token JWT se encuentra en [`docs/documento-explicativo.pdf`](docs/documento-explicativo.pdf).
+
+## Módulo de reportes avanzados (ampliación)
+ 
+Se amplió el sistema con un módulo de reportes consolidados de movimientos y auditorías, con filtros combinables entre sí.
+ 
+**Endpoints nuevos:**
+ 
+```http
+GET /api/reportes/movimientos?bodega={id}&producto={id}&tipoMovimiento=ENTRADA|SALIDA|TRANSFERENCIA&fechaInicio={fecha}&fechaFin={fecha}
+GET /api/reportes/auditoria?producto={id}&fechaInicio={fecha}&fechaFin={fecha}&campoModificado={texto}
+```
+ 
+Todos los parámetros son opcionales y combinables libremente entre sí (se puede aplicar uno, varios, o ninguno). Implementados mediante `@Query` de JPA con el patrón `:param IS NULL OR campo = :param`, agregado a `MovimientoRepository` y `AuditoriaRepository`.
+ 
+El filtro de auditorías por `campoModificado` se resuelve mediante `LIKE` sobre el JSON almacenado en `valoresAnteriores`/`valoresNuevos`, ya que la entidad `Auditoria` guarda snapshots completos de la entidad afectada, no un registro de cambios campo por campo.
+ 
+Ubicación en el código: paquete `com.jorgegmch.logitrack.test_c4` (`ReporteAvanzadoController`, `ReporteAvanzadoService`).
+ 
+### Evidencias de pruebas en Thunder Client
+ 
+**1. Movimientos — filtro por tipo y rango de fechas**
+ 
+![Movimientos por tipo y fecha](docs/capturas/pruebas-thunder-client/thunder-01-movimientos-tipo-fecha.png)
+ 
+**2. Movimientos — filtro por bodega**
+ 
+![Movimientos por bodega](docs/capturas/pruebas-thunder-client/thunder-02-movimientos-bodega.png)
+ 
+**3. Movimientos — filtros combinados (bodega + producto + tipo)**
+ 
+![Movimientos combinados](docs/capturas/pruebas-thunder-client/thunder-03-movimientos-combinados.png)
+ 
+**4. Movimientos — sin filtros**
+ 
+![Movimientos sin filtros](docs/capturas/pruebas-thunder-client/thunder-04-movimientos-sin-filtros.png)
+ 
+**5. Auditoría — filtro por producto**
+ 
+![Auditoría por producto](docs/capturas/pruebas-thunder-client/thunder-05-auditoria-producto.png)
+ 
+**6. Auditoría — filtro por rango de fechas**
+ 
+![Auditoría por fecha](docs/capturas/pruebas-thunder-client/thunder-06-auditoria-fecha.png)
+ 
+**7. Auditoría — filtro por campo modificado**
+ 
+![Auditoría por campo](docs/capturas/pruebas-thunder-client/thunder-07-auditoria-campo.png)
+ 
+**8. Auditoría — filtros combinados (producto + campo modificado)**
+ 
+![Auditoría combinada](docs/capturas/pruebas-thunder-client/thunder-08-auditoria-combinada.png)
 
 ## Autor
 
