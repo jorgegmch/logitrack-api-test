@@ -23,8 +23,8 @@ public interface AuditoriaRepository extends JpaRepository<Auditoria, Long> {
             + "AND (CAST(:fechaInicio AS timestamp) IS NULL OR a.fechaHora >= :fechaInicio) "
             + "AND (CAST(:fechaFin AS timestamp) IS NULL OR a.fechaHora <= :fechaFin) "
             + "AND (:campoModificado IS NULL OR "
-            + "     a.valoresNuevos LIKE CONCAT('%\"', CAST(:campoModificado AS string), '\":%') "
-            + "     OR a.valoresAnteriores LIKE CONCAT('%\"', CAST(:campoModificado AS string), '\":%')) "
+            + "     LOWER(a.valoresNuevos) LIKE LOWER(CONCAT('%\"', CAST(:campoModificado AS string), '\":%')) "
+            + "     OR LOWER(a.valoresAnteriores) LIKE LOWER(CONCAT('%\"', CAST(:campoModificado AS string), '\":%'))) "
             + "ORDER BY a.fechaHora DESC")
     List<Auditoria> buscarConFiltros(
             @Param("productoId") Long productoId,
